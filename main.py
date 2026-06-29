@@ -1,26 +1,33 @@
-from strategy import generate_signals
-from backtest import run_backtest
-df = calculate_indicators(df)
-df = generate_signals(df)
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-API_KEY = os.getenv("API_KEY")
 import requests
 import pandas as pd
+from dotenv import load_dotenv
 
 from indicators import calculate_indicators
-from signal import generate_signal
 from patterns import detect_pattern
+from signal import generate_signal
+from strategy import generate_signals
+from backtest import run_backtest
 
 # ===========================
-# BinaryAI Pro v0.4
+# Load API Key
+# ===========================
+
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
+print("API KEY:", API_KEY)
+print("Length :", len(API_KEY) if API_KEY else 0)
+
+# ===========================
+# Settings
 # ===========================
 
 SYMBOL = "EUR/USD"
 INTERVAL = "1min"
+
+# ===========================
+# Download Data
+# ===========================
 
 url = (
     f"https://api.twelvedata.com/time_series"
@@ -38,45 +45,49 @@ if "values" not in data:
     print(data)
     quit()
 
+# ===========================
+# Create DataFrame
+# ===========================
+
 df = pd.DataFrame(data["values"])
 
-# Oldest → Newest
 df = df.iloc[::-1].reset_index(drop=True)
 
-# Convert to float
 for col in ["open", "high", "low", "close"]:
     df[col] = df[col].astype(float)
 
 # ===========================
-# Calculate Indicators
+# Indicators
 # ===========================
 
 df = calculate_indicators(df)
 
 # ===========================
-# Detect Candle Pattern
+# Historical Strategy
+# ===========================
+
+df = generate_signals(df)
+
+# ===========================
+# Current Candle Analysis
 # ===========================
 
 pattern = detect_pattern(df)
-
-# ===========================
-# Generate Signal
-# ===========================
 
 signal, confidence, reasons = generate_signal(df, pattern)
 
 last = df.iloc[-1]
 
-print("\n" + "=" * 45)
-print("🚀 BinaryAI Pro v0.4")
-print("=" * 45)
+print("\n" + "=" * 50)
+print("🚀 BinaryAI Pro v0.5")
+print("=" * 50)
 
 print(f"Pair        : {SYMBOL}")
 print(f"Time        : {last['datetime']}")
 print(f"Price       : {last['close']:.5f}")
 
 print("\nIndicators")
-print("-" * 45)
+print("-" * 50)
 print(f"EMA20       : {last['EMA20']:.5f}")
 print(f"EMA50       : {last['EMA50']:.5f}")
 print(f"RSI         : {last['RSI']:.2f}")
@@ -85,38 +96,25 @@ print(f"ADX         : {last['ADX']:.2f}")
 print(f"ATR         : {last['ATR']:.5f}")
 
 print("\nPattern")
-print("-" * 45)
+print("-" * 50)
 print(pattern)
-print("\nPattern Score")
-print("-" * 45)
 
-if pattern and pattern != "None" and pattern != "No Pattern":
-    print(f"✅ {pattern}")
-else:
-    print("❌ No Pattern Found")
 print("\nReasons")
-print("-" * 45)
+print("-" * 50)
 
 if reasons:
     for reason in reasons:
         print("✔", reason)
-
 else:
     print("No confirmations")
-print("=" * 40)
-print("Signal     :", signal)
-print("Confidence :", confidence, "%")
 
-print("=" * 40)
+print("=" * 50)
+print("Signal      :", signal)
+print("Confidence  :", confidence, "%")
+print("=" * 50)
 
-print("\nDecision")
-print("-" * 45)
-print(signal)
+# ===========================
+# Backtest
+# ===========================
 
-print("\nConfidence")
-print("-" * 45)
-print(f"{confidence}%")
-
-print("=" * 45)
-from backtest import run_backtest
-run_backtest(df)
+df = run_backtest(df)
