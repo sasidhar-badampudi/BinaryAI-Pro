@@ -1,3 +1,7 @@
+from strategy import generate_signals
+from backtest import run_backtest
+df = calculate_indicators(df)
+df = generate_signals(df)
 import os
 from dotenv import load_dotenv
 
@@ -115,3 +119,4 @@ print(f"{confidence}%")
 
 print("=" * 45)
 from backtest import run_backtest
+run_backtest(df)
